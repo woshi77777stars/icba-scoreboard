@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ICBA 记分板</title>
+<meta name="description" content="ICBA 比赛记分板：固定位置队标切换、比赛/休息倒计时、双方自由加减计分。">
+<meta name="theme-color" content="#05070b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b121b'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%23ffc247' stroke-width='4'/%3E%3Cpath d='M32 14v36M14 32h36' stroke='%23ffc247' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="fx" aria-hidden="true"></div>
+<div class="flash" id="flash" aria-hidden="true"></div>
+
+<!-- ===================== 顶部：品牌 / 节数 / 工具 ===================== -->
+<header class="hud">
+  <div class="brand">
+    <span class="brand__badge">ICBA</span>
+    <span class="brand__text">记分板<small>SCOREBOARD</small></span>
+  </div>
+
+  <div class="period" aria-label="节数">
+    <button class="period__btn" data-act="period-down" aria-label="节数减一" title="节数 −1（↓）">−</button>
+    <div class="period__body">
+      <span class="period__label">节数</span>
+      <strong class="period__value" id="periodValue">1</strong>
+    </div>
+    <button class="period__btn" data-act="period-up" aria-label="节数加一" title="节数 +1（↑）">+</button>
+  </div>
+
+  <div class="hud__tools">
+    <button class="tool" data-act="sound" id="btnSound" aria-pressed="true" title="提示音开关（S）">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 9.5v5h3.5L13 19V5L7.5 9.5H4z"/><path d="M16.5 8.6a5 5 0 0 1 0 6.8"/><path d="M19.2 6a8.5 8.5 0 0 1 0 12"/>
+      </svg>
+      <span class="tool__label">声音</span>
+    </button>
+    <button class="tool" data-act="help" title="快捷键说明（?）">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2 1-1.2 1.9"/><path d="M12 17h.01"/>
+      </svg>
+      <span class="tool__label">帮助</span>
+    </button>
+    <button class="tool" data-act="settings" title="设置（P）">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 7h9M19 7h1M4 17h3M13 17h7"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/>
+      </svg>
+      <span class="tool__label">设置</span>
+    </button>
+    <button class="tool" data-act="lock" title="锁定面板，只看大屏（L）">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="5" y="10.5" width="14" height="9.5" rx="2.4"/><path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5"/>
+      </svg>
+      <span class="tool__label">锁定</span>
+    </button>
+    <button class="tool" data-act="fullscreen" title="全屏（F）">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
+      </svg>
+      <span class="tool__label">全屏</span>
+    </button>
+  </div>
+</header>
+
+<!-- ===================== 主区：队标1 · 记分板1 · 记分板2 · 队标2 ===================== -->
+<main class="board">
+
+  <div class="logo-slot" id="logoSlot0" data-slot="0" role="button" tabindex="0"
+       aria-label="队标 1：点击更换图片">
+    <div class="logo-slot__frame">
+      <img class="logo-slot__img" id="logoImg0" alt="队标 1" decoding="async" hidden>
+      <div class="logo-slot__placeholder" id="logoPh0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M4 18l5.2-4.6a2 2 0 0 1 2.7.1L21 20"/>
+        </svg>
+        <span>添加队标</span>
+      </div>
+    </div>
+    <div class="logo-slot__bar" id="logoBar0" hidden>
+      <button class="logo-slot__arrow" data-act="logo-prev" data-slot="0" aria-label="上一个队标">‹</button>
+      <span class="logo-slot__count" id="logoCount0">0/0</span>
+      <button class="logo-slot__arrow" data-act="logo-next" data-slot="0" aria-label="下一个队标">›</button>
+    </div>
+  </div>
+
+  <section class="panel" id="panel0" data-team="0">
+    <header class="panel__head">
+      <span class="panel__tag">记分板 1</span>
+      <input class="panel__name" id="nameInput0" type="text" value="队伍 1" maxlength="20"
+             aria-label="队伍 1 名称" spellcheck="false" autocomplete="off">
+      <button class="panel__more" data-act="menu" data-team="0" aria-label="更多操作" aria-haspopup="true">⋯</button>
+    </header>
+    <div class="panel__score" id="score0" data-act="edit-score" data-team="0"
+         role="spinbutton" aria-label="队伍 1 比分" tabindex="-1" title="双击可直接输入比分">0</div>
+    <div class="panel__actions">
+      <button class="chip" data-act="score" data-team="0" data-delta="-1" aria-label="队伍 1 减一分">−1</button>
+      <button class="chip chip--main" data-act="score" data-team="0" data-delta="1" aria-label="队伍 1 加一分">+1</button>
+      <button class="chip" data-act="score" data-team="0" data-delta="2" aria-label="队伍 1 加两分">+2</button>
+      <button class="chip" data-act="score" data-team="0" data-delta="3" aria-label="队伍 1 加三分">+3</button>
+    </div>
+    <div class="panel__menu" id="menu0" hidden>
+      <button data-act="undo" data-team="0">撤销上一步</button>
+      <button data-act="edit-score" data-team="0">直接输入比分</button>
+      <button data-act="reset-score" data-team="0">比分归零</button>
+      <button data-act="pick-logo" data-team="0">更换队标</button>
+    </div>
+  </section>
+
+  <section class="panel" id="panel1" data-team="1">
+    <header class="panel__head">
+      <span class="panel__tag">记分板 2</span>
+      <input class="panel__name" id="nameInput1" type="text" value="队伍 2" maxlength="20"
+             aria-label="队伍 2 名称" spellcheck="false" autocomplete="off">
+      <button class="panel__more" data-act="menu" data-team="1" aria-label="更多操作" aria-haspopup="true">⋯</button>
+    </header>
+    <div class="panel__score" id="score1" data-act="edit-score" data-team="1"
+         role="spinbutton" aria-label="队伍 2 比分" tabindex="-1" title="双击可直接输入比分">0</div>
+    <div class="panel__actions">
+      <button class="chip" data-act="score" data-team="1" data-delta="-1" aria-label="队伍 2 减一分">−1</button>
+      <button class="chip chip--main" data-act="score" data-team="1" data-delta="1" aria-label="队伍 2 加一分">+1</button>
+      <button class="chip" data-act="score" data-team="1" data-delta="2" aria-label="队伍 2 加两分">+2</button>
+      <button class="chip" data-act="score" data-team="1" data-delta="3" aria-label="队伍 2 加三分">+3</button>
+    </div>
+    <div class="panel__menu" id="menu1" hidden>
+      <button data-act="undo" data-team="1">撤销上一步</button>
+      <button data-act="edit-score" data-team="1">直接输入比分</button>
+      <button data-act="reset-score" data-team="1">比分归零</button>
+      <button data-act="pick-logo" data-team="1">更换队标</button>
+    </div>
+  </section>
+
+  <div class="logo-slot" id="logoSlot1" data-slot="1" role="button" tabindex="0"
+       aria-label="队标 2：点击更换图片">
+    <div class="logo-slot__frame">
+      <img class="logo-slot__img" id="logoImg1" alt="队标 2" decoding="async" hidden>
+      <div class="logo-slot__placeholder" id="logoPh1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M4 18l5.2-4.6a2 2 0 0 1 2.7.1L21 20"/>
+        </svg>
+        <span>添加队标</span>
+      </div>
+    </div>
+    <div class="logo-slot__bar" id="logoBar1" hidden>
+      <button class="logo-slot__arrow" data-act="logo-prev" data-slot="1" aria-label="上一个队标">‹</button>
+      <span class="logo-slot__count" id="logoCount1">0/0</span>
+      <button class="logo-slot__arrow" data-act="logo-next" data-slot="1" aria-label="下一个队标">›</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- ===================== 底部：比赛倒计时 / 休息倒计时 ===================== -->
+<footer class="clocks">
+
+  <section class="clock clock--game" id="clockGame" aria-label="比赛时间倒计时">
+    <div class="clock__head">
+      <div class="clock__title">
+        <span class="clock__label">比赛时间</span>
+        <span class="clock__sub" id="gameSub">10 分钟</span>
+      </div>
+      <div class="clock__controls">
+        <button class="btn btn--primary" data-act="game-toggle" id="gameToggle">开始</button>
+        <button class="btn" data-act="game-reset">重置</button>
+        <button class="btn btn--ghost" data-act="game-minus" title="减少一分钟">−1′</button>
+        <button class="btn btn--ghost" data-act="game-plus" title="增加一分钟">+1′</button>
+      </div>
+    </div>
+    <div class="clock__time" id="gameTime">10:00</div>
+  </section>
+
+  <section class="clock clock--break" id="clockBreak" aria-label="休息时间倒计时">
+    <div class="clock__inline">
+      <span class="clock__label">休息时间</span>
+      <div class="clock__time" id="breakTime">05:00</div>
+      <div class="clock__controls">
+        <button class="btn btn--primary btn--sm" data-act="break-toggle" id="breakToggle">开始</button>
+        <button class="btn btn--sm" data-act="break-reset">重置</button>
+        <button class="btn btn--ghost btn--sm" data-act="break-minus" title="减少一分钟">−1′</button>
+        <button class="btn btn--ghost btn--sm" data-act="break-plus" title="增加一分钟">+1′</button>
+      </div>
+    </div>
+  </section>
+
+</footer>
+
+<button class="unlock-fab" data-act="lock" aria-label="解锁控制面板" title="解锁（L）">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="5" y="10.5" width="14" height="9.5" rx="2.4"/><path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5"/>
+  </svg>
+</button>
+
+<!-- ===================== 队标图库 ===================== -->
+<div class="modal" id="modalLibrary" role="dialog" aria-modal="true" aria-labelledby="libraryTitle" hidden>
+  <div class="modal__mask" data-act="close-modal"></div>
+  <div class="modal__card modal__card--wide">
+    <header class="modal__head">
+      <h2 id="libraryTitle">队标图片 · 队伍 1</h2>
+      <button class="modal__close" data-act="close-modal" aria-label="关闭">✕</button>
+    </header>
+
+    <div class="dropzone" id="dropzone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v2.5A2.5 2.5 0 0 0 6.5 21h11A2.5 2.5 0 0 0 20 18.5V16"/>
+      </svg>
+      <p><strong>点击上传</strong>或把图片拖到这里</p>
+      <small>支持 PNG / JPG / SVG / WebP，会自动压缩到 480px 再保存在本机</small>
+      <input type="file" id="fileInput" accept="image/*" multiple hidden>
+    </div>
+
+    <div class="library" id="libraryGrid"></div>
+
+    <footer class="modal__foot">
+      <span class="modal__hint">点击缩略图即可切换；也可以用 ‹ › 或快捷键 <kbd>[</kbd> <kbd>]</kbd> 快速轮换。</span>
+      <button class="btn" data-act="close-modal">完成</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ===================== 设置 ===================== -->
+<div class="modal" id="modalSettings" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
+  <div class="modal__mask" data-act="close-modal"></div>
+  <div class="modal__card">
+    <header class="modal__head">
+      <h2 id="settingsTitle">设置</h2>
+      <button class="modal__close" data-act="close-modal" aria-label="关闭">✕</button>
+    </header>
+
+    <div class="form">
+      <fieldset class="form__group">
+        <legend>队伍</legend>
+        <label class="form__row">
+          <span>记分板 1 名称</span>
+          <input type="text" id="setName0" maxlength="20" autocomplete="off">
+        </label>
+        <label class="form__row">
+          <span>记分板 1 颜色</span>
+          <input type="color" id="setColor0">
+        </label>
+        <label class="form__row">
+          <span>记分板 2 名称</span>
+          <input type="text" id="setName1" maxlength="20" autocomplete="off">
+        </label>
+        <label class="form__row">
+          <span>记分板 2 颜色</span>
+          <input type="color" id="setColor1">
+        </label>
+      </fieldset>
+
+      <fieldset class="form__group">
+        <legend>计时</legend>
+        <label class="form__row">
+          <span>比赛时间（分钟）</span>
+          <input type="number" id="setGameMin" min="1" max="180" step="1" inputmode="numeric">
+        </label>
+        <label class="form__row">
+          <span>休息时间（分钟）</span>
+          <input type="number" id="setBreakMin" min="1" max="180" step="1" inputmode="numeric">
+        </label>
+        <label class="form__row form__row--switch">
+          <span>计时结束提示音</span>
+          <input type="checkbox" id="setSound">
+        </label>
+      </fieldset>
+    </div>
+
+    <footer class="modal__foot">
+      <button class="btn btn--danger" data-act="reset-all">恢复初始状态</button>
+      <div class="modal__foot-right">
+        <button class="btn" data-act="close-modal">取消</button>
+        <button class="btn btn--primary" data-act="save-settings">保存</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- ===================== 直接输入比分 ===================== -->
+<div class="modal" id="modalScore" role="dialog" aria-modal="true" aria-labelledby="scoreTitle" hidden>
+  <div class="modal__mask" data-act="close-modal"></div>
+  <div class="modal__card modal__card--narrow">
+    <header class="modal__head">
+      <h2 id="scoreTitle">输入比分</h2>
+      <button class="modal__close" data-act="close-modal" aria-label="关闭">✕</button>
+    </header>
+    <div class="score-editor">
+      <input type="number" id="scoreInput" min="0" max="9999" step="1" inputmode="numeric" aria-label="比分">
+    </div>
+    <footer class="modal__foot">
+      <button class="btn" data-act="close-modal">取消</button>
+      <button class="btn btn--primary" data-act="apply-score">确定</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ===================== 快捷键帮助 ===================== -->
+<div class="modal" id="modalHelp" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
+  <div class="modal__mask" data-act="close-modal"></div>
+  <div class="modal__card">
+    <header class="modal__head">
+      <h2 id="helpTitle">快捷键</h2>
+      <button class="modal__close" data-act="close-modal" aria-label="关闭">✕</button>
+    </header>
+    <ul class="keys">
+      <li><kbd>空格</kbd><span>比赛计时 开始 / 暂停</span></li>
+      <li><kbd>Enter</kbd><span>休息计时 开始 / 暂停</span></li>
+      <li><kbd>←</kbd><span>队伍 1 加 1 分</span></li>
+      <li><kbd>→</kbd><span>队伍 2 加 1 分</span></li>
+      <li><kbd>Shift</kbd>+<kbd>←</kbd><span>队伍 1 减 1 分</span></li>
+      <li><kbd>Shift</kbd>+<kbd>→</kbd><span>队伍 2 减 1 分</span></li>
+      <li><kbd>↑</kbd><span>节数 +1</span></li>
+      <li><kbd>↓</kbd><span>节数 −1</span></li>
+      <li><kbd>R</kbd><span>重置比赛计时</span></li>
+      <li><kbd>Shift</kbd>+<kbd>R</kbd><span>重置休息计时</span></li>
+      <li><kbd>[</kbd><span>队标 1 换上一张</span></li>
+      <li><kbd>]</kbd><span>队标 2 换下一张</span></li>
+      <li><kbd>L</kbd><span>锁定 / 解锁面板（投影时用）</span></li>
+      <li><kbd>F</kbd><span>全屏</span></li>
+      <li><kbd>S</kbd><span>提示音开关</span></li>
+      <li><kbd>P</kbd><span>打开设置</span></li>
+      <li><kbd>?</kbd><span>打开这个快捷键面板</span></li>
+      <li><kbd>Esc</kbd><span>关闭弹窗 / 退出锁定</span></li>
+    </ul>
+    <footer class="modal__foot">
+      <span class="modal__hint">比分、节数与图片都保存在这台设备的浏览器里，刷新或断电重开都不会丢。</span>
+      <button class="btn btn--primary" data-act="close-modal">知道了</button>
+    </footer>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<noscript><p class="noscript">这个记分板需要启用 JavaScript 才能运行。</p></noscript>
+
+<script src="app.js"></script>
+</body>
+</html>
