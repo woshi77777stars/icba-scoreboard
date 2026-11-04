@@ -23,9 +23,9 @@ grep -q '<title>ICBA 记分板</title>' /tmp/pages-verify.html && ok "页面标�
 n=$(grep -o '<button' /tmp/pages-verify.html | wc -l | tr -d ' ')
 [ "$n" = "44" ] && ok "按钮数 44" || bad "按钮数是 ${n}（期望 44）"
 
-# 4) 双计时默认值
+# 4) 双计时默认值（静态初始值；休息计时静态写的是 0 补齐的 05:00，运行时 JS 才显示成 5:00）
 grep -q '>10:00<' /tmp/pages-verify.html && ok "比赛计时默认 10:00" || bad "未找到 10:00"
-grep -q '>5:00<' /tmp/pages-verify.html && ok "休息计时默认 5:00" || bad "未找到 5:00"
+grep -q '>05:00<' /tmp/pages-verify.html && ok "休息计时默认 05:00" || bad "未找到 05:00"
 
 # 5) 零外链（自包含）
 ext=$(grep -oE '(src|href)="(https?:)?//[^"]*"' /tmp/pages-verify.html | wc -l | tr -d ' ')
